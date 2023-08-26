@@ -211,6 +211,7 @@ class OnlyOneBooking implements ErrorObj {
     }
 }
 
+
 export enum ErrorEnum {
     MissingToken,
     InvalidToken,
@@ -233,7 +234,8 @@ export enum ErrorEnum {
     Forbidden,
     NotFound,
     InternalServer,
-    ServiceUnavailable
+    ServiceUnavailable,
+    InvalidData
 }
 
 

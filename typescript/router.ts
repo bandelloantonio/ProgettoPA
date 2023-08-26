@@ -16,6 +16,14 @@ app.use((err: Error, req: any, res: any, next: any) => {
 });
 
 
+// Creazione di un nuovo modello
+app.post('/create-model', Middleware.JWT, Middleware.create_model, Middleware.create_model, function (req: any, res: any) {
+    Controller.createModel(req.body, res);
+});
+
+
+
+
 
 
 /** 

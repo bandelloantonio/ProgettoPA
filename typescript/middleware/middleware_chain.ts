@@ -21,9 +21,12 @@ export const NONJWT = [
 ];
 
 
-/*
-esportiamo le nostre classi 
-*/
+export const create_model = [
+    RouteMiddleware.checkUserExistence,
+    RouteMiddleware.checkPayload,
+    RouteMiddleware.checkDatetimes,
+    RouteMiddleware.checkUserBalance
+];
 
 
 export const refill = [

@@ -1,4 +1,4 @@
-//Questa tabella tiene traccia degli utenti registrati nel sistema.
+
 DROP TABLE IF EXISTS user;
 
 CREATE TABLE user (
@@ -11,7 +11,7 @@ CREATE TABLE user (
   UNIQUE KEY unique_email (email)
 );
 
-//Questa tabella tiene traccia dei modelli di ottimizzazione creati dagli utenti.
+
 DROP TABLE IF EXISTS models;
 
 CREATE TABLE models (
@@ -24,7 +24,7 @@ CREATE TABLE models (
 );
 
 
-//Questa tabella contiene informazioni sui nodi dei grafi associati ai modelli.
+
 DROP TABLE IF EXISTS nodes;
 
 CREATE TABLE nodes (
@@ -35,7 +35,7 @@ CREATE TABLE nodes (
     FOREIGN KEY (model_id) REFERENCES models(id)
 );
 
-//Questa tabella contiene informazioni sugli archi dei grafi associati ai modelli.
+
 DROP TABLE IF EXISTS edges;
 
 CREATE TABLE edges (
@@ -50,7 +50,6 @@ CREATE TABLE edges (
 );
 
 
-//Questa tabella tiene traccia delle richieste di aggiornamento dei pesi degli archi effettuate dagli utenti
 DROP TABLE IF EXISTS update_requests;
 
 CREATE TABLE update_requests (
@@ -63,7 +62,7 @@ CREATE TABLE update_requests (
     status ENUM('in attesa', 'approvato', 'respinto') NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (model_id) REFERENCES models(id),
-    FOREIGN KEY (user_id) REFERENCES users(id),
+    FOREIGN KEY (user_id) REFERENCES user(id),
     FOREIGN KEY (source_node_id) REFERENCES nodes(id),
     FOREIGN KEY (target_node_id) REFERENCES nodes(id)
 );

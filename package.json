@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "nodeman router.ts"
+    "start": "node router.ts"
   },
   "repository": {
     "type": "git",

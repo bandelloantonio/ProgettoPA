@@ -48,7 +48,7 @@ export const User = sequelize.define('user', {
 });
 
 
-export const Model = sequelize.define('model', {
+export const Models = sequelize.define('model', {
     id: {
         type: DataTypes.INTEGER,
         primaryKey: true,
@@ -78,7 +78,7 @@ export const Model = sequelize.define('model', {
 });
 
 
-export const Node = sequelize.define('node', {
+export const Nodes = sequelize.define('node', {
     id: {
         type: DataTypes.INTEGER,
         primaryKey: true,
@@ -104,7 +104,7 @@ export const Node = sequelize.define('node', {
 });
 
 
-export const Edge = sequelize.define('edge', {
+export const Edges = sequelize.define('edge', {
     id: {
         type: DataTypes.INTEGER,
         primaryKey: true,

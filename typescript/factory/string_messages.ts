@@ -25,7 +25,5 @@ export const alreadyBookedDatetime_message: string = "Forbidden - Datetime alrea
 export const alreadyBookedEvent_message: string = "Forbidden - You already booked this event";
 export const onlyOneBooking_message: string = "Bad Request - Too many preferences in payload";
 
-/**
- * 
- * i messaggi delle varie classi 
- */
+export const createdModel_message: string = "SUCCESS -  created model succesfully";
+export const tokenRefill_message: string = "SUCCESS - Tokens refilled succesfully";
