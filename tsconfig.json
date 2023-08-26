@@ -1,0 +1,7 @@
+{
+    "compilerOptions": {
+        "outDir": "ts-built",
+        "rootDir": "typescript"
+    },
+    "exclude": ["node_modules"]
+}

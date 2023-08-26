@@ -1,0 +1,1 @@
+//qui inseriamo la restituzione in base alle classi e alle operazioni dei messaggi e dello stato
