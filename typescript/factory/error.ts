@@ -121,14 +121,6 @@ class BadRequest implements ErrorObj {
     }
 }
 
-class EventClosed implements ErrorObj {
-    getErrorObj(): { status: number,  msg: string } {
-        return {
-            status: 403,
-            msg: Message.errorEventClosed_message
-        }
-    }
-}
 
 class DuplicateDatetimes implements ErrorObj {
     getErrorObj(): { status: number,  msg: string } {
@@ -148,11 +140,27 @@ class UserNotFound implements ErrorObj {
     }
 }
 
-class EventNotFound implements ErrorObj {
+class StatusModel implements ErrorObj {
+    getErrorObj(): { status: number,  msg: string } {
+        return {
+            status: 403,
+            msg: Message.errorStatusModel_message
+        }
+    }
+}
+class InvalidDateFormat implements ErrorObj {
+    getErrorObj(): { status : number,  msg : string } {
+        return {
+            status: 202,
+            msg: Message.InvalidDateFormat_message
+        }
+    }
+}
+class ModelNotFound implements ErrorObj {
     getErrorObj(): { status: number,  msg: string } {
         return {
             status: 404,
-            msg: Message.eventNotFound_message
+            msg: Message.modelNotFound_message
         }
     }
 }
@@ -175,32 +183,7 @@ class UnplannedDatetimes implements ErrorObj {
     }
 }
 
-class BookedEvent implements ErrorObj {
-    getErrorObj(): { status: number,  msg: string } {
-        return {
-            status: 403,
-            msg: Message.bookedEvent_message
-        }
-    }
-}
 
-class AlreadyBookedDatetime implements ErrorObj {
-    getErrorObj(): { status: number,  msg: string } {
-        return {
-            status: 403,
-            msg: Message.alreadyBookedDatetime_message
-        }
-    }
-}
-
-class AlreadyBookedEvent implements ErrorObj {
-    getErrorObj(): { status: number,  msg: string } {
-        return {
-            status: 403,
-            msg: Message.alreadyBookedEvent_message
-        }
-    }
-}
 
 class OnlyOneBooking implements ErrorObj {
     getErrorObj(): { status: number,  msg: string } {
@@ -221,21 +204,21 @@ export enum ErrorEnum {
     MalformedPayload,
     DuplicateDatetimes,
     UserNotFound,
-    EventNotFound,
+    ModelNotFound,
     InsufficientBalance,
     UnplannedDatetimes,
-    BookedEvent,
     AlreadyBookedDatetime,
     AlreadyBookedEvent,
     OnlyOneBooking,
-    EventClosed,
     BadRequest,
     Unauthorized,
     Forbidden,
     NotFound,
     InternalServer,
     ServiceUnavailable,
-    InvalidData
+    InvalidData,
+    StatusModel,
+    InvalidDateFormat,
 }
 
 
@@ -254,26 +237,23 @@ export function getError(type: ErrorEnum): ErrorObj{
         case ErrorEnum.OnlyOneBooking:
             retval = new OnlyOneBooking();
             break;
-        case ErrorEnum.AlreadyBookedEvent:
-            retval = new AlreadyBookedEvent();
-            break;
-        case ErrorEnum.AlreadyBookedDatetime:
-            retval = new AlreadyBookedDatetime();
-            break;
-        case ErrorEnum.BookedEvent:
-            retval = new BookedEvent();
-            break;
         case ErrorEnum.UnplannedDatetimes:
             retval = new UnplannedDatetimes();
             break;
         case ErrorEnum.InsufficientBalance:
             retval = new InsufficientBalance();
             break;
-        case ErrorEnum.EventNotFound:
-            retval = new EventNotFound();
+        case ErrorEnum.ModelNotFound:
+            retval = new ModelNotFound();
+            break;
+            case ErrorEnum.InvalidDateFormat:
+            retval = new InvalidDateFormat();
             break;
         case ErrorEnum.UserNotFound:
             retval = new UserNotFound();
+            break;
+        case ErrorEnum.StatusModel:
+            retval = new StatusModel();
             break;
         case ErrorEnum.DuplicateDatetimes:
             retval = new DuplicateDatetimes();
@@ -313,10 +293,7 @@ export function getError(type: ErrorEnum): ErrorObj{
             break;
         case ErrorEnum.BadRequest:
             retval = new BadRequest();
-            break; 
-        case ErrorEnum.EventClosed:
-            retval = new EventClosed();
-            break;       
+            break;    
     }
     return retval;
 }

@@ -58,6 +58,10 @@ export const Models = sequelize.define('model', {
         type: DataTypes.INTEGER,
         allowNull: false
     },
+    status: {
+        type: DataTypes.ENUM('pending', 'approved', 'rejected'),
+        allowNull: false
+    },
     name: {
         type: DataTypes.STRING(100),
         allowNull: false
@@ -73,62 +77,6 @@ export const Models = sequelize.define('model', {
 }, 
 {
     modelName: 'model',
-    timestamps: false,
-    freezeTableName: true
-});
-
-
-export const Nodes = sequelize.define('node', {
-    id: {
-        type: DataTypes.INTEGER,
-        primaryKey: true,
-        autoIncrement: true
-    },
-    model_id: {
-        type: DataTypes.INTEGER,
-        allowNull: false
-    },
-    node_name: {
-        type: DataTypes.STRING(50),
-        allowNull: false
-    },
-    cost: {
-        type: DataTypes.DECIMAL(10, 2),
-        allowNull: false
-    }
-}, 
-{
-    modelName: 'node',
-    timestamps: false,
-    freezeTableName: true
-});
-
-
-export const Edges = sequelize.define('edge', {
-    id: {
-        type: DataTypes.INTEGER,
-        primaryKey: true,
-        autoIncrement: true
-    },
-    model_id: {
-        type: DataTypes.INTEGER,
-        allowNull: false
-    },
-    source_node_id: {
-        type: DataTypes.INTEGER,
-        allowNull: false
-    },
-    target_node_id: {
-        type: DataTypes.INTEGER,
-        allowNull: false
-    },
-    cost: {
-        type: DataTypes.DECIMAL(10, 2),
-        allowNull: false
-    }
-}, 
-{
-    modelName: 'edge',
     timestamps: false,
     freezeTableName: true
 });
@@ -160,8 +108,8 @@ export const UpdateRequest = sequelize.define('update_request', {
         type: DataTypes.DECIMAL(10, 2),
         allowNull: false
     },
-    status: {
-        type: DataTypes.ENUM('in attesa', 'approvato', 'respinto'),
+    status_update: {
+        type: DataTypes.ENUM('pending', 'approved', 'rejected'),
         allowNull: false
     },
     created_at: {

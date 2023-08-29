@@ -118,7 +118,7 @@ export function checkPayload(req: any, res: any, next: any): void {
 /**
  * Middleware 'checkDatetimes'
  * 
- * Controlla che la richiesta di creazione di un evento riporti nel corpo un vettore di datetimes
+ * Controlla che la richiesta di creazione di un modello riporti nel corpo un vettore di datetimes
  * (stringhe contenenti data, orario e fuso per ognuno degli slot disposti allo svolgimento dell'evento)
  * le quali devono rispettare un pattern prestabilito. Si avvale della funzione {@link checkDatetime}.
  * Inoltre, controlla che nel vettore non ci siano datetime duplicati; per far ciò crea un Set a partire
@@ -152,3 +152,50 @@ function checkDatetime(datetime: string): boolean {
     const check = new RegExp(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}[+-]\d{2}:\d{2}$/);
     return (!check.test(datetime) || !Date.parse(datetime));
 }
+
+
+/**
+ * Middleware 'checkModelExistence'
+ * 
+ * Controlla che il modello specificato nella richiesta del client esista effettivamente.
+ * Per farlo invoca la funzione {@link checkModelExistence} del Controller.
+ * 
+ * @param req La richiesta da parte del client
+ * @param res La risposta da parte del server
+ * @param next Il riferimento al middleware successivo
+ */
+export function checkModelExistence(req: any, res: any, next: any): void {
+    Controller.checkModelExistence(req.params.model_id, res).then((check) => {
+        if(check) next();
+        else next(ErrorEnum.ModelNotFound);
+    });
+}
+
+
+/**
+ * Middleware 'checkModelStatus'
+ * 
+ * Controlla lo stato del modello e lo ritorna nel caso in cui è in stato di pending 
+ * Per farlo invoca la funzione {@link getModelStatus} del Controller.
+ * 
+ * @param req La richiesta da parte del client
+ * @param res La risposta da parte del server
+ * @param next Il riferimento al middleware successivo
+ */
+export function checkModelStatus(req: any, res: any, next: any): void {
+    const modelId = req.body.model_id;
+
+    Controller.getModelStatus(res).then((pendingModels: any[]) => {
+        const pendingModel = pendingModels.find(model => model.id === modelId);
+
+        if (pendingModel && pendingModel.status === 'pending') {
+            next(); // Procedi se lo stato è "pending"
+        } else {
+            next(ErrorEnum.StatusModel); // Altrimenti genera l'errore appropriato
+        }
+    });
+}
+
+
+
+

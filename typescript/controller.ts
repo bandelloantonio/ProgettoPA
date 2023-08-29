@@ -1,7 +1,21 @@
+import { Model, Op } from 'sequelize';
 import { ErrorEnum, getError } from './factory/error';
 import { SuccessEnum, getSuccess } from './factory/success';
-import { User, Models, Nodes, Edges} from './model/model';
-import Graph from 'node-dijkstra';
+import { User, Models, UpdateRequest} from './model/model';
+import * as Dijkstra from 'node-dijkstra';
+
+
+
+const models: any[] = []; // Array per i modelli
+
+// Inizializza l'oggetto Dijkstra
+const dijkstraGraph = new Dijkstra()
+
+
+
+
+
+
 
 
 /**
@@ -43,7 +57,7 @@ export async function checkBalance(email: string, modality: number, res: any): P
     }catch(error){
         controllerErrors(ErrorEnum.InternalServer, error, res);
     }
-    const requiredTokens = calculateModelCost({ nodes: [], edges: [] }); // Passa le specifiche vuote o in base ai dati reali
+    const requiredTokens = calculateCosts(result.nodes, result.edges);// Passa le specifiche vuote o in base ai dati reali
     if(result.token >= requiredTokens) return true;
     else return false;
 }
@@ -108,64 +122,220 @@ function controllerErrors(enum_error: ErrorEnum, err: Error, res: any) {
 }
 
 
+/**
+ * Funzione 'createModel'
+ * 
+ * Funzione che si occupa di creare un evento date le sue specifiche.
+ * Se la creazione va a buon fine vengono decrementati i token dell'owner in base ai costi definiti
+ * nella mappa {@link hashDecreaseToken}.
+ * 
+ * @param {object} req L'oggetto richiesta HTTP
+ * @param res La risposta da parte del server
+ * @param {object} res L'oggetto risposta HTTP
+ */
+export async function createModel(req, res) {
 
-export async function createModel(model: any, res: any): Promise<void> {
-    try {
-        const graphData = await getGraphData(model.id);
-        const graph = new Graph(graphData);
-
-        Models.create(model).then((item) => {
-            User.decrement(['token'], { by: calculateModelCost(model), where: { email: model.owner } });
-            
-            const shortestPath = graph.path(graphData.nodes[0], graphData.nodes[1]); // Utilizza i primi due nodi come esempio, sostituisci con i nodi desiderati
-
-            const new_res = getSuccess(SuccessEnum.CreatedModel).getSuccessObj();
-            res.status(new_res.status).json({ message: new_res.msg, model: item });
-        }).catch((error) => {
-            controllerErrors(ErrorEnum.InternalServer, error, res);
-        });
-    } catch (error) {
-        controllerErrors(ErrorEnum.InternalServer, error, res);
+    const { name, nodes, edges, user_id } = req.body;
+  
+    // Verifica dei parametri richiesti
+    if (!name || nodes === undefined || edges === undefined || !user_id) {
+      const errorRes = getSuccess(SuccessEnum.CreatedModel).getSuccessObj();
+      return  res.status(errorRes.status).json({message:errorRes.msg});
     }
+  
+    // Verifica che nodes e edges siano numeri positivi
+    if (typeof nodes !== 'number' || typeof edges !== 'number' || nodes < 0 || edges < 0) {
+      const errorRes = getSuccess(SuccessEnum.Positive).getSuccessObj();
+      return res.status(errorRes.status).json({ message: errorRes.msg });
+    }
+  
+    // Calcolo dei costi utilizzando la funzione esterna
+    const totalCost = calculateCosts(nodes, edges);
+ 
+    // Creare il grafo con il numero di nodi ed archi
+    const graph = {};
+    for (let i = 0; i < nodes; i++) {
+      graph[i] = {};
+      for (let j = 0; j < nodes; j++) {
+        if (i !== j) {
+          graph[i][j] = edges; // Assegna un peso fittizio agli archi
+        }
+      }
+    }
+  
+    // Aggiungi il grafo all'oggetto Dijkstra (assumendo che dijkstraGraph sia già inizializzato)
+    dijkstraGraph.addNode(name, graph);
+  
+    // Crea il modello
+    const model = {
+      id: models.length + 1,
+      name,
+      nodes,
+      edges,
+      user_id
+    };
+    models.push(model);
+  
+  
+    const successRes = getSuccess(SuccessEnum.CreatedModel).getSuccessObj();
+  res.status(successRes.status).json({ message: successRes.msg, model: model });
+
 }
 
-async function getGraphData(modelId: number): Promise<any> {
-    try {
-        const nodes = await Nodes.findAll({ where: { model_id: modelId } });
-        const edges = await Edges.findAll({ where: { model_id: modelId } });
 
-        const nodeNames = nodes.map(node => node.getDataValue('node_name'));
-        const formattedEdges = edges.map(edge => ({
-            from: nodeNames[edge.getDataValue('source_node_id') - 1], // I nodi nel database partono da 1
-            to: nodeNames[edge.getDataValue('target_node_id') - 1],   // Gli id dei nodi sono sequenziali e partano da 1
-            weight: edge.getDataValue('cost')
-        }));
+/**
+ * Funzione 'calculateCosts'
+ * 
+ * Calcola il costo totale in base al numero di nodi e archi.
+ * 
+ * @param {number} nodes Il numero di nodi nel grafo
+ * @param {number} edges Il numero di archi nel grafo
+ * @returns {number} Il costo totale calcolato
+ */
+function calculateCosts(nodes, edges) {
+    const nodeCost = nodes * 0.15;
+    const edgeCost = edges * 0.01;
+    const totalCost = nodeCost + edgeCost;
+    return totalCost;
+  }
 
-        return {
-            nodes: nodeNames,
-            edges: formattedEdges
-        };
-    } catch (error) {
-        throw error;
-    }
+
+  /**
+ * Funzione 'checkModelExistence'
+ * 
+ * Funzione che si occupa di controllare che un modello esista, dato l'id.
+ * 
+ * @param model_id L'id del modello
+ * @param res La risposta da parte del server
+ * @returns True se l'evento esiste, False altrimenti
+ */
+export async function checkModelExistence(model_id: number, res: any): Promise<boolean> {
+  let result: any;
+  try{
+      result = await Models.findByPk(model_id, {raw: true});
+  }catch(error){
+      controllerErrors(ErrorEnum.InternalServer, error, res);
+  }
+  return !!result; // Ritorna true se il risultato è definito, altrimenti false
 }
 
 
+/**
+* Funzione 'getModelStatus'
+* 
+* Funzione che si occupa di ritornare tutte le informazioni dei modelli con stato "pending".
+* 
+* @param res La risposta da parte del server
+* @returns Un array contenente le informazioni dei modelli con stato "pending"
+*/
+export async function getModelStatus(res: any): Promise<any[]> {
+ let pendingModels: any[] = [];
 
+ try {
+   // Cerca i modelli con stato "pending" nella tabella update_models
+   const updateModels = await UpdateRequest.findAll({ where: { status: 'pending' }, raw: true });
+
+   if (updateModels) {
+     pendingModels = pendingModels.concat(updateModels);
+   }
+
+   // Cerca i modelli con stato "pending" nella tabella models
+   const models = await Models.findAll({ where: { status: 'pending' }, raw: true });
+
+   if (models) {
+     pendingModels = pendingModels.concat(models);
+   }
+
+   return pendingModels;
+
+ } catch (error) {
+   controllerErrors(ErrorEnum.InternalServer, error, res);
+   return [];
+ }
+}
 
 
 
 /**
- * Funzione 'calculateModelCost'
+ * Funzione 'getDateRequest'
  * 
- * Funzione che calcola il costo in token per creare un modello in base alle specifiche.
+ * Funzione che si occupa di ottenere gli aggiornamenti di un modello in base ai parametri di data e stato forniti.
  * 
- * @param model L'oggetto che contiene le specifiche del modello da creare
- * @returns Il costo in token per creare il modello
+ * @param model_id L'id del modello
+ * @param start_date Data di inizio (opzionale)
+ * @param end_date Data di fine (opzionale)
+ * @param filtro Filtro temporale ("after", "before", "between")
+ * @param res La risposta da parte del server
+ * @returns Un array contenente gli aggiornamenti filtrati
  */
-function calculateModelCost(model: any): number {
-    const nodeCost = model.nodes.length * 0.15;
-    const edgeCost = model.edges.length * 0.01;
-    const totalCost = nodeCost + edgeCost;
-    return totalCost;
+export async function getDateRequest(model_id: number, start_date?: string, end_date?: string, filtro?: string, res?: any): Promise<any[]> {
+  try {
+    let whereClause = { model_id };
+
+    // Verifica se il formato delle date è valido e applica i filtri
+    if (start_date) {
+      if (!isValidDateFormat(start_date)) {
+        return handleInvalidDateFormat(res);
+      }
+      if (filtro === "after") {
+        whereClause['created_at'] = { [Op.gte]: start_date };
+      }
+    }
+    if (end_date) {
+      if (!isValidDateFormat(end_date)) {
+        return handleInvalidDateFormat(res);
+      }
+      if (filtro === "before") {
+        whereClause['created_at'] = { [Op.lte]: end_date };
+      }
+    }
+    if (start_date && end_date && filtro === "between") {
+      if (!isValidDateFormat(start_date) || !isValidDateFormat(end_date)) {
+        return handleInvalidDateFormat(res);
+      }
+      whereClause['created_at'] = { [Op.between]: [start_date, end_date] };
+    }
+    if (filtro) {
+      whereClause['status_update'] = filtro;
+    }
+
+    // Esegui la query per ottenere gli aggiornamenti filtrati
+    const updates = await UpdateRequest.findAll({ where: whereClause });
+
+    return updates;
+  } catch (error) {
+    console.error(error);
+    if (res) {
+      controllerErrors(ErrorEnum.InternalServer, error, res); // Utilizza la funzione controllerErrors per gestire l'errore
+    }
+    return [];
+  }
+}
+
+/**
+ * Funzione 'isValidDateFormat'
+ * 
+ * Verifica se il formato della data è valido (YYYY-MM-DD).
+ * 
+ * @param date La data da verificare
+ * @returns True se il formato è valido, False altrimenti
+ */
+function isValidDateFormat(date: string): boolean {
+  const regex = /^\d{4}-\d{2}-\d{2}$/;
+  return regex.test(date);
+}
+
+/**
+ * Funzione 'handleInvalidDateFormat'
+ * 
+ * Gestisce l'errore per formato data non valido. Crea un nuovo oggetto errore e lo passa alla
+ * funzione 'controllerErrors' per la gestione dell'errore.
+ * 
+ * @param res La risposta da parte del server
+ * @returns Un array vuoto
+ */
+function handleInvalidDateFormat(res: any) {
+  const error = new Error('Invalid date format'); // Creazione di un nuovo oggetto errore
+  controllerErrors(ErrorEnum.InvalidDateFormat, error, res); // Passaggio dell'oggetto errore alla funzione controllerErrors
+  return [];
 }

@@ -24,6 +24,26 @@ class CreatedModel implements SuccessObj {
     }
 }
 
+
+class InvalidDateFormat implements SuccessObj {
+    getSuccessObj(): { status : number,  msg : string } {
+        return {
+            status: 200,
+            msg: Message.InvalidDateFormat_message
+        }
+    }
+}
+
+
+class Positive implements SuccessObj {
+    getSuccessObj(): { status : number,  msg : string } {
+        return {
+            status: 201,
+            msg: Message.positive_message
+        }
+    }
+}
+
 class TokenRefill implements SuccessObj {
     getSuccessObj(): { status : number,  msg : string } {
         return {
@@ -37,7 +57,9 @@ class TokenRefill implements SuccessObj {
 export enum SuccessEnum {
    
     CreatedModel,
-    TokenRefill
+    TokenRefill,
+    Positive,
+    InvalidDateFormat,
 }
 
 
@@ -52,8 +74,14 @@ export enum SuccessEnum {
 export function getSuccess(type: SuccessEnum): SuccessObj{
     let retval: SuccessObj = null;
     switch (type){
-        case SuccessEnum.CreatedModel:
+            case SuccessEnum.CreatedModel:
             retval = new CreatedModel();
+            break;
+            case SuccessEnum.InvalidDateFormat:
+            retval = new InvalidDateFormat();
+            break;
+            case SuccessEnum.Positive:
+            retval = new Positive();
             break;
             case SuccessEnum.TokenRefill:
             retval = new TokenRefill();

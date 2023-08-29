@@ -28,6 +28,18 @@ export const create_model = [
     RouteMiddleware.checkUserBalance
 ];
 
+export const model_status = [
+    RouteMiddleware.checkModelExistence,
+    RouteMiddleware.checkModelStatus,
+    RouteMiddleware.checkDatetimes,
+];
+
+export const date_request = [
+    RouteMiddleware.checkModelExistence,
+    RouteMiddleware.checkModelStatus,
+    RouteMiddleware.checkDatetimes,
+];
+
 
 export const refill = [
     RouteMiddleware.checkAdmin,
