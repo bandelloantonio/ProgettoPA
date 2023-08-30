@@ -43,3 +43,10 @@ CREATE TABLE update_requests (
     FOREIGN KEY (target_node_id) REFERENCES nodes(id)
 );
 
+INSERT INTO user(email, name, surname, role,token) VALUES
+('antoniobandello@email.com','Antonio','Bandello','admin',10),
+('davideandresani@email.com','Davide','Andresani','admin',10),
+('mariorossi@email.com','Mario','Rossi','user',2),
+('andreaverdi@email.com','Andrea','Verdi','user',5),
+('giovannibianchi@email.com','Giovanni','Bianchi','user',0);
+
