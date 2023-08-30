@@ -339,3 +339,21 @@ function handleInvalidDateFormat(res: any) {
   controllerErrors(ErrorEnum.InvalidDateFormat, error, res); // Passaggio dell'oggetto errore alla funzione controllerErrors
   return [];
 }
+
+/**
+ * Funzione 'getPendingRequests'
+ *
+ * Restituisce le richieste di aggiornamento che sono in fase di pending * 
+ */
+
+export async function getPendingRequests(): Promise<any[]> {
+ 
+      const pendingRequests = await UpdateRequest.findAll({
+          where: {
+              status_update: 'pending'
+          }
+      });
+                                           // gestire errore ****
+      return pendingRequests;
+  
+}

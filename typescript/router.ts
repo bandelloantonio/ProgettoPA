@@ -17,7 +17,7 @@ app.use((err: Error, req: any, res: any, next: any) => {
 
 
 /**
- * Richiesta che consente di creare un evento (Autenticazione JWT)
+ * Richiesta che consente di creare un modello (Autenticazione JWT)
  */
 app.post('/create-model', Middleware.JWT, Middleware.create_model, Middleware.create_model, function (req: any, res: any) {
     Controller.createModel(req.body, res);
@@ -41,7 +41,15 @@ app.post('/date_request', Middleware.NONJWT, Middleware.date_request, Middleware
     Controller.getDateRequest(req.body);
 });
 
-
+/** 
+ * Richiesta che permette di v restituire l’elenco degli aggiornamenti che sono in stato 
+ * di pending relative a un'utente che si autentica mediante token JWT
+ */ 
+app.get('/pending_requests', Middleware.JWT, Middleware.error_handling, async function (req: any, res: any) {
+    const pendingRequests = await Controller.getPendingRequests();
+        res.json(pendingRequests);
+    
+});
 /** 
  * Richiesta che permette ad un utente admin di ricaricare i token di un certo utente (Autenticazione JWT)
  */ 
