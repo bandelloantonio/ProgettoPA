@@ -45,17 +45,17 @@ app.post('/date_request', Middleware.NONJWT, Middleware.date_request, Middleware
  * Richiesta che permette di v restituire l’elenco degli aggiornamenti che sono in stato 
  * di pending relative a un'utente che si autentica mediante token JWT
  */ 
-app.get('/pending_requests', Middleware.JWT, Middleware.error_handling, async function (req: any, res: any) {
-    const pendingRequests = await Controller.getPendingRequests();
-        res.json(pendingRequests);
-    
+app.post('/pending_requests', Middleware.JWT, Middleware.pending_request, Middleware.error_handling, function (req: any, res: any) {
+    Controller.getModelStatus(req.body)
 });
+
 /** 
  * Richiesta che permette ad un utente admin di ricaricare i token di un certo utente (Autenticazione JWT)
  */ 
 app.post('/refill', Middleware.JWT, Middleware.refill, Middleware.error_handling, function (req: any, res: any) {
     Controller.refill(req.body.owner, req.body.token, res);
 });
+
 
 /** 
  * Gestione delle rotte non previste

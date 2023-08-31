@@ -55,3 +55,11 @@ export const error_handling =[
     RequestMiddleware.logErrors,
     RequestMiddleware.errorHandler
 ];
+
+export const pending_request = [
+    RouteMiddleware.checkModelExistence,
+    RouteMiddleware.checkModelStatus,
+    RouteMiddleware.checkModelExistence,
+    RouteMiddleware.checkModelStatus,
+    RouteMiddleware.checkDatetimes,
+];
