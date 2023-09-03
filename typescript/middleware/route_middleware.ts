@@ -63,6 +63,25 @@ export function checkUserBalance(req: any, res: any, next: any): void {
 
 
 /**
+ * Middleware 'checkUserBalanceUpdate'
+ * 
+ * Controlla che l'utente (owner) specificato nella richiesta di creazione di un evento abbia una
+ * quantità di token sufficienti a completare l'inserimento
+ * Per farlo invoca la funzione {@link checkUserBalance} del Controller.
+ * 
+ * @param req La richiesta da parte del client
+ * @param res La risposta da parte del server
+ * @param next Il riferimento al middleware successivo
+ */
+export function checkUserUpdate(req: any, res: any, next: any): void {
+    Controller.checkUpdate(req.body.owner, req.body.modality, res).then((check) => {
+        if(check) next();
+        else next(ErrorEnum.InsufficientBalance);
+    })
+}
+
+
+/**
  * Middleware 'checkAdmin'
  * 
  * Controlla che l'utente che effettua la chiamata sia effettivamente registrato come admin all'interno

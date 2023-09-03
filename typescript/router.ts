@@ -33,6 +33,41 @@ app.post('/model_status', Middleware.NONJWT, Middleware.model_status, Middleware
 
 
 /** 
+ * Richiesta che permette di dare la possibilità di aggiornare un modello cambiando il peso per uno o più archi
+ */ 
+app.put('/update_weight', Middleware.JWT, Middleware.update_weight, Middleware.error_handling, function (req: any, res: any) {
+    Controller.getDateRequest(req.body);
+});
+
+
+
+
+/** 
+ * Richiesta che permette di dare la possibilità di approvare un modello aggiornato cambiando il peso per uno o più archi
+ */ 
+app.put('/approve_update_request', Middleware.NONJWT, Middleware.approve_update_request, Middleware.error_handling, function (req: any, res: any) {
+    Controller.approveUpdateRequest(req.body,res,req);
+});
+
+
+/** 
+ * Richiesta che permette di dare la possibilità di aggiornare un modello cambiando il peso per uno o più archi
+ */ 
+app.put('/rejected_update_request', Middleware.NONJWT, Middleware.rejected_update_request, Middleware.error_handling, function (req: any, res: any) {
+    Controller.rejectedUpdateRequest(req.body,res,req);
+});
+
+
+/** 
+ * Richiesta che permette di eseguire un modello fornendo un nodo di partenza ed uno di arrivo
+ */ 
+app.put('/execute_model', Middleware.NONJWT, Middleware.execute_model, Middleware.error_handling, function (req: any, res: any) {
+    const email = req.body.email; 
+    Controller.executeModel(req.body,res,req,email);
+});
+
+
+/** 
  * Richiesta che permette di v restituire l’elenco degli aggiornamenti effettuati nel 
  * corso del tempo filtrando opzionalmente per data (inferiore a, superiore a, compresa tra) 
  * distinguendo per stato ovvero accettato / rigettato

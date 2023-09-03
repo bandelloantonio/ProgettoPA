@@ -183,13 +183,29 @@ class UnplannedDatetimes implements ErrorObj {
     }
 }
 
-
+class Rejected_request implements ErrorObj {
+    getErrorObj(): { status: number,  msg: string } {
+        return {
+            status: 400,
+            msg: Message.rejectedRequest_message
+        }
+    }
+}
 
 class OnlyOneBooking implements ErrorObj {
     getErrorObj(): { status: number,  msg: string } {
         return {
             status: 400,
             msg: Message.onlyOneBooking_message
+        }
+    }
+}
+
+class EdgesNotExist implements ErrorObj {
+    getErrorObj(): { status: number,  msg: string } {
+        return {
+            status: 400,
+            msg: Message.edgesNotExist_message
         }
     }
 }
@@ -219,6 +235,8 @@ export enum ErrorEnum {
     InvalidData,
     StatusModel,
     InvalidDateFormat,
+    Rejected_request,
+    EdgesNotExist,
 }
 
 
@@ -291,9 +309,16 @@ export function getError(type: ErrorEnum): ErrorObj{
         case ErrorEnum.ServiceUnavailable:
             retval = new ServiceUnavailableError();
             break;
+        case ErrorEnum.Rejected_request:
+            retval = new Rejected_request();
+            break;
         case ErrorEnum.BadRequest:
             retval = new BadRequest();
-            break;    
+            break;   
+        case ErrorEnum.EdgesNotExist:
+            retval = new EdgesNotExist();
+            break;   
     }
     return retval;
 }
+

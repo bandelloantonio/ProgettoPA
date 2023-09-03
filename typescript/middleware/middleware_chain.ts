@@ -21,6 +21,38 @@ export const NONJWT = [
 ];
 
 
+export const execute_model = [
+    RouteMiddleware.checkUserExistence,   
+    RouteMiddleware.checkDatetimes,
+    RouteMiddleware.checkModelExistence,
+];
+
+export const update_weight = [
+    RouteMiddleware.checkUserExistence,
+    RouteMiddleware.checkPayload,
+    RouteMiddleware.checkDatetimes,
+    RouteMiddleware.checkUserUpdate,
+    RouteMiddleware.checkModelExistence,
+];
+
+
+export const approve_update_request = [
+    RouteMiddleware.checkUserExistence,
+    RouteMiddleware.checkPayload,
+    RouteMiddleware.checkUserBalance,
+    RouteMiddleware.checkModelExistence,
+    RouteMiddleware.checkModelStatus,
+];
+
+export const rejected_update_request = [
+    RouteMiddleware.checkUserExistence,
+    RouteMiddleware.checkPayload,
+    RouteMiddleware.checkUserBalance,
+    RouteMiddleware.checkModelExistence,
+    RouteMiddleware.checkModelStatus,
+];
+
+
 export const create_model = [
     RouteMiddleware.checkUserExistence,
     RouteMiddleware.checkPayload,

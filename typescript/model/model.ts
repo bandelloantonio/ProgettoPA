@@ -13,7 +13,7 @@ const sequelize: Sequelize = SequelizeSingleton.getConnection();
 */ 
 
 
-export const User = sequelize.define('user', {
+export const User : any = sequelize.define('user', {
     id: {
         type: DataTypes.INTEGER,
         primaryKey: true,
@@ -25,10 +25,6 @@ export const User = sequelize.define('user', {
         unique: true
     },
     name: {
-        type: DataTypes.STRING(30),
-        allowNull: false
-    },
-    surname: {
         type: DataTypes.STRING(30),
         allowNull: false
     },
@@ -48,30 +44,38 @@ export const User = sequelize.define('user', {
 });
 
 
-export const Models = sequelize.define('model', {
+
+
+export const Models : any = sequelize.define('model', {
     id: {
         type: DataTypes.INTEGER,
         primaryKey: true,
         autoIncrement: true
     },
-    user_id: {
-        type: DataTypes.INTEGER,
+    nome: {
+        type: DataTypes.STRING(30),
+        allowNull: false
+    },
+    user_email: {
+        type: DataTypes.STRING(100), 
+        
         allowNull: false
     },
     status: {
-        type: DataTypes.ENUM('pending', 'approved', 'rejected'),
+        type: DataTypes.ENUM('approved'),
+        allowNull: false,
+        defaultValue: 'approved'
+    },
+    node: {
+        type: DataTypes.INTEGER,
         allowNull: false
     },
-    name: {
-        type: DataTypes.STRING(100),
-        allowNull: false
-    },
-    alpha: {
-        type: DataTypes.DECIMAL(3, 2),
+    edges: {
+        type: DataTypes.INTEGER,
         allowNull: false
     },
     created_at: {
-        type: DataTypes.INTEGER,
+        type: DataTypes.DATE,
         defaultValue: DataTypes.NOW
     }
 }, 
@@ -82,7 +86,7 @@ export const Models = sequelize.define('model', {
 });
 
 
-export const UpdateRequest = sequelize.define('update_request', {
+export const UpdateRequest : any = sequelize.define('update_request', {
     id: {
         type: DataTypes.INTEGER,
         primaryKey: true,
@@ -94,18 +98,6 @@ export const UpdateRequest = sequelize.define('update_request', {
     },
     user_id: {
         type: DataTypes.INTEGER,
-        allowNull: false
-    },
-    source_node_id: {
-        type: DataTypes.INTEGER,
-        allowNull: false
-    },
-    target_node_id: {
-        type: DataTypes.INTEGER,
-        allowNull: false
-    },
-    new_cost: {
-        type: DataTypes.DECIMAL(10, 2),
         allowNull: false
     },
     status_update: {

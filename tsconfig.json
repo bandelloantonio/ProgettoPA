@@ -3,5 +3,6 @@
         "outDir": "ts-built",
         "rootDir": "typescript"
     },
-    "exclude": ["node_modules"]
+    "exclude": ["node_modules"],
+    "$schema": "./tsconfig.json"
 }

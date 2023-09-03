@@ -2,6 +2,8 @@
  * File contente i messaggi da ritornare nel corpo della risposta.
 */
 
+export const edgesNotExist_message: string = "Bad Request - Edeges do not exist";
+export const rejectedRequest_message: string = "Bad Request - Request refused";
 export const noAuthHeader_message: string = "Bad Request - No authorization header";
 export const noPayoadHeader_message: string = "Bad Request - No JSON payload header";
 export const missingToken_message: string = "Bad Request - Missing JWT Token";
@@ -26,7 +28,7 @@ export const modelNotFound_message: string = "Not Found - Model not found";
 export const createdModel_message: string = "SUCCESS -  created model succesfully";
 export const tokenRefill_message: string = "SUCCESS - Tokens refilled succesfully";
 export const positive_message: string = "SUCCESS - Node and Edges are positive number";
-
+export const saveModel_message: string = "SUCCESS - update model succesfully";
 
 
 

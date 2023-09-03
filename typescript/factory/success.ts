@@ -53,6 +53,14 @@ class TokenRefill implements SuccessObj {
     }
 }
 
+class SaveModel implements SuccessObj {
+    getSuccessObj(): { status : number,  msg : string } {
+        return {
+            status: 200,
+            msg: Message.saveModel_message
+        }
+    }
+}
 
 export enum SuccessEnum {
    
@@ -60,6 +68,7 @@ export enum SuccessEnum {
     TokenRefill,
     Positive,
     InvalidDateFormat,
+    SaveModel,
 }
 
 
@@ -82,6 +91,9 @@ export function getSuccess(type: SuccessEnum): SuccessObj{
             break;
             case SuccessEnum.Positive:
             retval = new Positive();
+            break;
+            case SuccessEnum.SaveModel:
+            retval = new SaveModel();
             break;
             case SuccessEnum.TokenRefill:
             retval = new TokenRefill();

@@ -1,12 +1,11 @@
-import { Model, Op } from 'sequelize';
+import {  Op } from 'sequelize';
 import { ErrorEnum, getError } from './factory/error';
 import { SuccessEnum, getSuccess } from './factory/success';
 import { User, Models, UpdateRequest} from './model/model';
-import * as Dijkstra from 'node-dijkstra';
+import Graph = require("node-dijkstra");
+const Dijkstra = require("dijkstra");
 
-
-
-const models: any[] = []; // Array per i modelli
+const models: any[] = []; 
 
 // Inizializza l'oggetto Dijkstra
 const dijkstraGraph = new Dijkstra()
@@ -62,6 +61,29 @@ export async function checkBalance(email: string, modality: number, res: any): P
     else return false;
 }
 
+/**
+ * Funzione 'checkUpdate'
+ * 
+ * Funzione che si occupa di controllare che un utente, data la sua mail, abbia una quantità di token 
+ * sufficienti a creare il model con la modalità specificata. 
+ * Si avvale della Mappa {@link hashDecreaseToken} per associare modalità a costo (in token).
+ * 
+ * @param email L'email dell'utente
+ * @param modality La modalità dell'evento
+ * @param res La risposta da parte del server
+ * @returns True se l'utente ha abbastanza token, False altrimenti
+ */
+export async function checkUpdate(email: string, modality: number, res: any): Promise<boolean>{
+  let result: any;
+  try{
+      result = await User.findByPk(email, {raw: true});
+  }catch(error){
+      controllerErrors(ErrorEnum.InternalServer, error, res);
+  }
+  const requiredTokens = calculateCostsUpdate(result.edges);// Passa le specifiche vuote o in base ai dati reali
+  if(result.token >= requiredTokens) return true;
+  else return false;
+}
 
 /**
  * Funzione 'getRole'
@@ -133,12 +155,12 @@ function controllerErrors(enum_error: ErrorEnum, err: Error, res: any) {
  * @param res La risposta da parte del server
  * @param {object} res L'oggetto risposta HTTP
  */
-export async function createModel(req, res) {
+export async function createModel(req: { body: { id : any ; email: any; nodes: any; edges: any; nome: any; created_at: any; }; }, res: { status: (arg0: number) => { (): any; new(): any; json: { (arg0: { message: string; model?: { id: any; nome: any; email: any; nodes: number; edges: number; status: string; created_at: any; }; }): void; new(): any; }; }; }) {
 
-    const { name, nodes, edges, user_id } = req.body;
+    const { id, email, nodes, edges, nome, created_at } = req.body;
   
     // Verifica dei parametri richiesti
-    if (!name || nodes === undefined || edges === undefined || !user_id) {
+    if (!nome || !email || nodes === undefined || edges === undefined) {
       const errorRes = getSuccess(SuccessEnum.CreatedModel).getSuccessObj();
       return  res.status(errorRes.status).json({message:errorRes.msg});
     }
@@ -156,23 +178,28 @@ export async function createModel(req, res) {
     const graph = {};
     for (let i = 0; i < nodes; i++) {
       graph[i] = {};
-      for (let j = 0; j < nodes; j++) {
-        if (i !== j) {
-          graph[i][j] = edges; // Assegna un peso fittizio agli archi
-        }
-      }
+    }
+
+      // Aggiungi i pesi degli archi al grafo
+    for (let i = 1; i < nodes; i++) {
+      const edgeKey = `${i}-${i + 1}`;
+      graph[i][i + 1] = edges[edgeKey];
+      graph[i + 1][i] = edges[edgeKey]; // Nel caso di un grafo non diretto
     }
   
+  
     // Aggiungi il grafo all'oggetto Dijkstra (assumendo che dijkstraGraph sia già inizializzato)
-    dijkstraGraph.addNode(name, graph);
+    dijkstraGraph.addNode(email, graph);
   
     // Crea il modello
     const model = {
-      id: models.length + 1,
-      name,
+      id,
+      nome,
+      email,
       nodes,
       edges,
-      user_id
+      status: 'approved',
+      created_at,
     };
     models.push(model);
   
@@ -192,12 +219,28 @@ export async function createModel(req, res) {
  * @param {number} edges Il numero di archi nel grafo
  * @returns {number} Il costo totale calcolato
  */
-function calculateCosts(nodes, edges) {
+function calculateCosts(nodes: number, edges: number) {
     const nodeCost = nodes * 0.15;
     const edgeCost = edges * 0.01;
     const totalCost = nodeCost + edgeCost;
     return totalCost;
   }
+
+
+  /**
+ * Funzione 'calculateCosts'
+ * 
+ * Calcola il costo totale in base al numero di archi aggiornati
+ * 
+ * @param {number} edges Il numero di archi nel grafo
+ * @returns {number} Il costo totale calcolato
+ */
+function calculateCostsUpdate( edges: number) {
+  
+  const edgeCost = edges * 0.05;
+ 
+  return edgeCost;
+}
 
 
   /**
@@ -340,20 +383,367 @@ function handleInvalidDateFormat(res: any) {
   return [];
 }
 
-/**
- * Funzione 'getPendingRequests'
- *
- * Restituisce le richieste di aggiornamento che sono in fase di pending * 
- */
 
-export async function getPendingRequests(): Promise<any[]> {
- 
-      const pendingRequests = await UpdateRequest.findAll({
-          where: {
-              status_update: 'pending'
+
+
+
+
+
+/**
+ * Funzione 'update_weight'
+ * 
+ * Gestisce l'approvazione o il rifiuto di una richiesta di aggiornamento del modello.
+ * 
+ * @param {string} nome Il nome del modello
+ * @param {string} email L'email dell'utente che fa la richiesta
+ * @param {object} req L'oggetto della richiesta HTTP
+ * @returns {object} Un oggetto con lo stato e il messaggio del risultato dell'operazione
+ */
+export async function update_weight(nome, res, email, req) {
+  const userEmailFromRequest = email;
+  const modelNameFromRequest = nome;
+
+  // Verifica se esiste già una richiesta in fase "pending" per questo modello
+  const existingPendingRequest = await UpdateRequest.findOne({
+    where: {
+      nome: modelNameFromRequest,
+      status_update: 'pending'
+    }
+  });
+
+  if (existingPendingRequest) {
+    // Esiste già una richiesta in fase "pending" per questo modello
+    const error = new Error('Request refused');
+    controllerErrors(ErrorEnum.Rejected_request, error, res);
+  } else {
+
+    const model = await Models.findOne({
+      where: { nome: modelNameFromRequest },
+      
+    });
+    
+
+   
+        if (model.user_email === userEmailFromRequest) {
+
+          const updateData = req.body.edges;
+          const alpha = parseFloat(process.env.ALPHA);
+
+          for (const edge in updateData) {
+            if (updateData.hasOwnProperty(edge)) {
+              const weight = updateData[edge];
+              const previousWeight = model.edges[edge];
+
+               // Calcola il nuovo peso secondo la formula della media esponenziale
+              const newWeight = alpha * previousWeight + (1 - alpha) * weight;
+
+              // Aggiorna il peso dell'arco nel modello
+              model.edges[edge] = newWeight;
+              
+              // Verifica se l'arco esiste nel modello
+              if (arcExist(model, edge)) {
+                // L'arco esiste, puoi aggiornare il peso
+                model.edges[edge] = weight;
+              } else {
+                // L'arco non esiste, gestisci l'errore
+                const error = new Error(`L'arco ${edge} non esiste nel modello`);
+                controllerErrors(ErrorEnum.EdgesNotExist, error, res);
+                return;
+              }
+            }
           }
-      });
-                                           // gestire errore ****
-      return pendingRequests;
+
+          
+          // Salva il modello aggiornato nel database
+          await model.save();
+
+          // Aggiorna lo stato del modello a "approved"
+          model.status = 'approved';
+          await model.save();
+
+          const successRes = getSuccess(SuccessEnum.SaveModel).getSuccessObj();
+          res.status(successRes.status).json({ message: successRes.msg, model: model });
+
+        } else {
+
+          const updateData = req.body.edges;
+
+          for (const edge in updateData) {
+            if (updateData.hasOwnProperty(edge)) {
+              const weight = updateData[edge];
+
+              // Verifica se l'arco esiste nel modello
+              if (arcExist(model, edge)) {
+                // L'arco esiste, puoi aggiornare il peso
+                model.edges[edge] = weight;
+              } else {
+                // L'arco non esiste, gestisci l'errore
+                const error = new Error(`L'arco ${edge} non esiste nel modello`);
+                controllerErrors(ErrorEnum.EdgesNotExist, error, res);
+                return;
+              }
+            }
+          }
+
+          // Salva il modello aggiornato nel database
+          await model.save();
+
+          const successRes = getSuccess(SuccessEnum.SaveModel).getSuccessObj();
+          res.status(successRes.status).json({ message: successRes.msg, model: model });
+
+          // Aggiorna lo stato del modello a "pending"
+          model.status = 'pending';
+          await model.save();
+        }
+      }
+    } 
+
+
+  /**
+  * Funzione 'arcExist'
+  * 
+  * Verifica se un arco specificato esiste nell'oggetto "edges" di un modello.
+  * 
+  * @param {object} model Il modello da controllare
+  * @param {string} edge Il nome dell'arco da verificare
+  * @returns {boolean} True se l'arco esiste, altrimenti False
+  */
+  function arcExist(model: any, edge: string): boolean {
+    // Verifica se l'arco specificato esiste nell'oggetto "edges" del modello
+    return model.edges.hasOwnProperty(edge);
+  }
+
+
+
+ /**
+ * Funzione 'approveUpdateRequest'
+ * 
+ * Gestisce l'approvazione di una richiesta di aggiornamento del modello.
+ * 
+ * @param {object} body Il corpo della richiesta
+ * @param {object} res L'oggetto di risposta HTTP
+ * @param {object} req L'oggetto di richiesta HTTP
+ */
+export async function approveUpdateRequest(body: any, res, req) {
+  const requestId = req.params.requestId;
+
+  // Trova la richiesta di aggiornamento nel database
+  const updateRequest = await UpdateRequest.findByPk(requestId);
+
+  if (!updateRequest) {
+    // La richiesta di aggiornamento non esiste
+    const error = new Error('Update request not found');
+    controllerErrors(ErrorEnum.ModelNotFound, error, res);
+    return;
+  }
+
+  // Trova il modello che desideri aggiornare nel database
+  const modelIdToUpdate = updateRequest.model_id;
+  const updatedModel = await Models.findByPk(modelIdToUpdate);
+
+  if (!updatedModel) {
+    // Il modello da aggiornare non esiste
+    const error = new Error('Model to update not found');
+    controllerErrors(ErrorEnum.ModelNotFound, error, res);
+    return;
+  }
+
+  // Esegui l'aggiornamento del modello in base ai dati dell'aggiornamento
+  const updateData = updateRequest.data; // Sostituisci con la struttura dati corretta
+
+  // Modifica lo stato del modello a 'approved'
+  updatedModel.status = 'approved';
+  await updatedModel.save();
+
+  const successRes = getSuccess(SuccessEnum.SaveModel).getSuccessObj();
+  res.status(successRes.status).json({ message: successRes.msg, model: updatedModel });
+}
+
+
+
+
+/**
+ * Funzione 'rejectedUpdateRequest'
+ * 
+ * Gestisce il rifiuto di una richiesta di aggiornamento del modello.
+ * 
+ * @param {object} body Il corpo della richiesta
+ * @param {object} res L'oggetto di risposta HTTP
+ * @param {object} req L'oggetto di richiesta HTTP
+ */
+export async function rejectedUpdateRequest(body: any, res, req) {
+  const requestId = req.params.requestId;
+
+  // Trova la richiesta di aggiornamento nel database
+  const updateRequest = await UpdateRequest.findByPk(requestId);
+
+  if (!updateRequest) {
+    // La richiesta di aggiornamento non esiste
+    const error = new Error('Update request not found');
+    controllerErrors(ErrorEnum.ModelNotFound, error, res);
+    return;
+  }
+
+  // Trova il modello che desideri aggiornare nel database
+  const modelIdToUpdate = updateRequest.model_id;
+  const updatedModel = await Models.findByPk(modelIdToUpdate);
+
+  if (!updatedModel) {
+    // Il modello da aggiornare non esiste
+    const error = new Error('Model to update not found');
+    controllerErrors(ErrorEnum.ModelNotFound, error, res);
+    return;
+  }
+
+  // Esegui l'aggiornamento del modello in base ai dati dell'aggiornamento
+  const updateData = updateRequest.data; // Sostituisci con la struttura dati corretta
+
+  // Modifica lo stato del modello a 'rejected'
+  updatedModel.status = 'rejected';
+  await updatedModel.save();
+
+  const successRes = getSuccess(SuccessEnum.SaveModel).getSuccessObj();
+  res.status(successRes.status).json({ message: successRes.msg, model: updatedModel });
+}
+
+
+
+
+
+
+
+
+
+/**
+ * Funzione 'executeModel'
+ * 
+ * Esegue un modello fornito un nodo di partenza e uno di arrivo.
+ * 
+ * @param {string} startNode Il nodo di partenza
+ * @param {string} goalNode Il nodo di arrivo
+ * @returns {object} Un oggetto con il percorso e il costo associato
+ */
+export async function executeModel(startNode: any, modelNameOrId: any, goalNode: any, email : string) {
+  try {
+
+    const userEmailFromRequest = email;
+
+    // Esegui la ricerca del modello tramite il nome o l'ID fornito
+    const model = await Models.findOne({
+      where: {
+        [Op.or]: [
+          { nome: modelNameOrId }, // Sostituisci "nome" con il nome del campo nel tuo database
+          { id: modelNameOrId },   // Sostituisci "id" con il nome del campo nel tuo database
+        ],
+      },
+    });
+
+    if (!model) {
+      // Il modello non è stato trovato
+      return { error: "Modello non trovato" };
+    }
+
+    const startTime = Date.now();
+
+    // Esegui il calcolo del percorso ottimo utilizzando il modello e i nodi di partenza e arrivo
+    const optimalPath = calculateOptimalPath(model, startNode, goalNode);
+
+    const endTime = Date.now();
+    const executionTime = endTime - startTime;
+
+    if (!optimalPath) {
+      // Nessun percorso trovato
+      return { error: "Nessun percorso trovato" };
+    }
+
+    // Estrai i nodi e gli archi dal modello
+    const nodes = model.node; 
+    const edges = model.edges; 
+
+    // Calcola il costo totale del percorso utilizzando calculateTokenCost
+    const numberOfNodes = nodes.length;
+    const numberOfEdges = edges.length;
+    const tokenCost = calculateCosts(numberOfNodes, numberOfEdges);
+
+    // Verifica se il credito dell'utente è sufficiente per coprire il costo totale
+    const user = await User.findOne({
+      where: {
+        email: userEmailFromRequest, 
+      },
+    });
+
+    if (!user) {
+      // Utente non trovato
+      return { error: 'Utente non trovato' };
+    }
+
+    if (user.token < tokenCost) {
+      // Il credito dell'utente non è sufficiente
+      return { error: 'Credito insufficiente' };
+    }
+
+    // Sottrai il costo dal credito dell'utente
+    user.token -= tokenCost;
+    await user.save();
+
+    // Ritorna il percorso e il costo associato
+    return { path: optimalPath, cost: tokenCost, executionTime: executionTime };
+  } catch (error) {
+    console.error("Errore durante l'esecuzione del modello:", error);
+    return { error: 'Errore durante l\'esecuzione del modello' };
+  }
+}
+
+
+
+/**
+ * Funzione per calcolare il percorso ottimo
+ * 
+ * @param {object} graphs I grafi
+ * @param {string} startNode Il nodo di partenza
+ * @param {string} goalNode Il nodo di arrivo
+ * @returns {array} Il percorso ottimo
+ */
+function calculateOptimalPath(graphs, startNode, goalNode) {
+  const route = new Graph();
   
+  // Aggiungi i nodi e gli archi dai tuoi grafi
+  for (const graph of graphs) {
+    const { node, edges } = graph;
+    route.addNode(node, edges);
+  }
+  
+  // Esegui il calcolo del percorso
+  const optimalPath = route.path(startNode, goalNode);
+  
+  return optimalPath;
+}
+
+
+/**
+ * Funzione 'calculateCosts'
+ * 
+ * Calcola il costo totale in base al percorso ottimo considerando i pesi degli archi.
+ * 
+ * @param {string[]} path Il percorso ottimo nel grafo
+ * @param {object} model Il modello del grafo con pesi sugli archi
+ * @returns {number} Il costo totale calcolato
+ */
+function pathCost(path, model) {
+  let totalCost = 0;
+  
+  // Calcola il costo sommando i pesi degli archi nel percorso ottimo
+  for (let i = 0; i < path.length - 1; i++) {
+    const fromNode = path[i];
+    const toNode = path[i + 1];
+    
+    // Assicurati che il model contenga informazioni sui pesi degli archi tra fromNode e toNode
+    if (model.edges[fromNode] && model.edges[fromNode][toNode]) {
+      totalCost += model.edges[fromNode][toNode]; // Aggiungi il peso dell'arco al costo totale
+    } else {
+      totalCost += Number.POSITIVE_INFINITY;
+    }
+  }
+  
+  return totalCost;
 }
