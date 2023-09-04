@@ -44,3 +44,6 @@ INSERT INTO user(email, name, surname, role,token) VALUES
 ('andreaverdi@email.com','Andrea','Verdi','user',5),
 ('giovannibianchi@email.com','Giovanni','Bianchi','user',0);
 
+INSERT INTO models(user_email, node, edges) VALUES
+('davideandresani@email.com', 10,{"1-2": 1,"1-4": 1,"1-5": 2, "2-3": 1,"2-5": 3, "2-6": 3, "3-6": 2, "3-7": 1, "4-8": 1, "5-6": 4, "5-8": 2, "5-9": 3, "6-9": 3, "6-10": 2, "7-10": 1, "8-9": 1, "9-10": 1});
+('antoniobandello@email.com', 10,{"1-4": 1,"1-5": 1,"1-8": 3,"2-5": 3, "2-6": 3, "3-7": 6, "3-9": 1, "3-10": 4, "4-5": 1, "4-8": 2, "5-8": 3, "5-9": 10, "6-9": 3, "7-9": 3 ,"7-10": 2, "9-10": 5});
