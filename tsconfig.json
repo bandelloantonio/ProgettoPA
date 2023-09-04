@@ -1,6 +1,6 @@
 {
     "compilerOptions": {
-        "outDir": "ts-built",
+        "outDir": "./ts-built",
         "rootDir": "typescript"
     },
     "exclude": ["node_modules"],

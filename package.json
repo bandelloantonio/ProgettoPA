@@ -4,8 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "build": "tsc",
-    "start": "node ts-built/router.ts"
+    "build": "npx tsc",
+    "start": "node ts-built/router.js"
   },
   "repository": {
     "type": "git",

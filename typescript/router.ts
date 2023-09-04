@@ -36,7 +36,9 @@ app.post('/model_status', Middleware.NONJWT, Middleware.model_status, Middleware
  * Richiesta che permette di dare la possibilità di aggiornare un modello cambiando il peso per uno o più archi
  */ 
 app.put('/update_weight', Middleware.JWT, Middleware.update_weight, Middleware.error_handling, function (req: any, res: any) {
-    Controller.getDateRequest(req.body);
+    const email = req.body.email; 
+    const nome = req.body.nome; 
+    Controller.update_weight(req.body, res, email, nome);
 });
 
 

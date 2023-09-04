@@ -3,12 +3,12 @@ import { ErrorEnum, getError } from './factory/error';
 import { SuccessEnum, getSuccess } from './factory/success';
 import { User, Models, UpdateRequest} from './model/model';
 import Graph = require("node-dijkstra");
-const Dijkstra = require("dijkstra");
+
 
 const models: any[] = []; 
 
 // Inizializza l'oggetto Dijkstra
-const dijkstraGraph = new Dijkstra()
+const dijkstraGraph = new Graph();
 
 
 
